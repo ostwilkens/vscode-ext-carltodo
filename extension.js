@@ -156,7 +156,6 @@ function activate(context) {
 		activeEditor.setDecorations(checkedDecorationType, checked);
 		activeEditor.setDecorations(commentDecorationType, comment);
 		activeEditor.setDecorations(headingDecorationType, heading);
-
 	}
 
 	function triggerUpdateDecorations(throttle = false) {
@@ -184,7 +183,7 @@ function activate(context) {
 	}, null, context.subscriptions);
 
 	vscode.workspace.onDidChangeTextDocument(event => {
-		const isCorrectLanguage = editor.document.languageId === "ctd"
+		const isCorrectLanguage = event.document.languageId === "ctd"
 		if (activeEditor && event.document === activeEditor.document && isCorrectLanguage) {
 			triggerUpdateDecorations(true);
 		}
