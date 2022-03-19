@@ -47,7 +47,7 @@ function activate(context) {
 	let timeout = undefined;
 
 	const uncheckedDecorationType = vscode.window.createTextEditorDecorationType({
-		fontWeight: "bold"
+		color: "#ABD"
 	});
 	const checkedDecorationType = vscode.window.createTextEditorDecorationType({
 		opacity: "0.5"
@@ -58,12 +58,15 @@ function activate(context) {
 		opacity: "0.9"
 	});
 	const headingDecorationType = vscode.window.createTextEditorDecorationType({
-		fontWeight: "bold",
+		fontWeight: "600",
+		color: "#89C",
+		textDecoration: "underline",
 	});
 
 	let activeEditor = vscode.window.activeTextEditor;
 
-	const uncheckedRegex = /\[ ?\]/gm;
+	const uncheckedRegex = /\[ ?\].*$/gm;
+	// const uncheckedRegex = /\[ ?\]/gm;
 	const checkedRegex = /\[x\]/gm;
 	const commentRegex = /\#.*?$/gm;
 	const headingRegex = /^[^\[\n]*:$/gm;
