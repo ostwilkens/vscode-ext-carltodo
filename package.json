@@ -1,0 +1,44 @@
+{
+	"name": "carl-todo",
+	"description": "Carl ToDo",
+	"version": "0.1.0",
+	"publisher": "ostwilkens",
+	"repository": "https://github.com/ostwilkens/carl-todo",
+	"engines": {
+		"vscode": "^1.32.0"
+	},
+	"scripts": {},
+	"devDependencies": {
+		"@types/vscode": "^1.32.0"
+	},
+	"activationEvents": [
+		"onLanguage:ctd",
+		"onCommand:extension.check",
+		"onCommand:extension.uncheck"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+            {
+                "command": "extension.check",
+                "title": "Check"
+            },
+			{
+                "command": "extension.uncheck",
+                "title": "Uncheck"
+            }
+        ],
+		"languages": [
+			{
+				"id": "ctd",
+				"extensions": [
+					".ctd"
+				],
+				"aliases": [
+					"ctd"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		]
+	}
+}
