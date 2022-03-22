@@ -5,18 +5,18 @@
 	"autoClosingPairs": [
 		{ "open": "[", "close": "]" },
 	],
-    "onEnterRules": [
-		{
-            "beforeText": "^.*\\:$",
-            "action": { "indent": "indent", "appendText": "" }
-        },
-        {
-            "beforeText": "\\[[ xX]?\\]",
-            "action": { "indent": "none", "appendText": "[ ] " }
-        },
-        {
-            "beforeText": "^\\s*- ",
-            "action": { "indent": "none", "appendText": "- " }
-        },
-      ]
+    // "onEnterRules": [
+	// 	{
+    //         "beforeText": "^.*\\:$",
+    //         "action": { "indent": "indent", "appendText": "" }
+    //     },
+    //     {
+    //         "beforeText": "\\[[ xX]?\\]",
+    //         "action": { "indent": "none", "appendText": "[ ] " }
+    //     },
+    //     {
+    //         "beforeText": "^\\s*- ",
+    //         "action": { "indent": "none", "appendText": "- " }
+    //     },
+    //   ]
 }

@@ -46,44 +46,65 @@ function activate(context) {
 
 	let timeout = undefined;
 
-	const uncheckedDecorationType = vscode.window.createTextEditorDecorationType({
-		color: "#ABD"
-	});
 	const checkedDecorationType = vscode.window.createTextEditorDecorationType({
-		opacity: "0.5"
+		opacity: "0.45",
 	});
 	const commentDecorationType = vscode.window.createTextEditorDecorationType({
 		color: "#596",
 		fontStyle: "italic",
-		opacity: "0.9"
 	});
-	const headingDecorationType = vscode.window.createTextEditorDecorationType({
-		fontWeight: "600",
-		color: "#89C",
-		textDecoration: "underline",
+	const projectDecorationType = vscode.window.createTextEditorDecorationType({
+		// color: "#89C",
+		// fontStyle: "italic",
+		fontWeight: "bold"
 	});
+	const areaDecorationType = vscode.window.createTextEditorDecorationType({
+		color: "#AAA",
+		fontStyle: "italic",
+		// fontWeight: "100"
+	});
+	const uncheckedDecorationType = vscode.window.createTextEditorDecorationType({
+		color: "#ABD"
+		// color: "#89C",
+	});
+	// const headingDecorationType = vscode.window.createTextEditorDecorationType({
+	// 	fontWeight: "600",
+	// 	color: "#89C",
+	// 	textDecoration: "underline",
+	// });
 
 	let activeEditor = vscode.window.activeTextEditor;
 
+	const checkedBoxRegex = /\[x\]/g;
+	const commentRegex = /\#.*?$/gm;
+	// const projectRegex = /[\>] .*:?$/gm;
+	const projectRegex = /.*:$/gm;
+	// const projectRegex = /[^>]*:$/gm;
+	// const projectRegex = /.*:?$/gm;
+	const areaRegex = /[A-Za-z0-9 \._]*\>/gm;
 	const uncheckedRegex = /\[ ?\].*$/gm;
 	// const uncheckedRegex = /\[ ?\]/gm;
-	const checkedRegex = /\[x\]/gm;
-	const commentRegex = /\#.*?$/gm;
-	const headingRegex = /^[^\[\n]*:$/gm;
+	// const checkedRegex = /\[x\]/gm;
+	// const headingRegex = /^[^\[\n]*:$/gm;
 
 	function updateDecorations() {
 		if (!activeEditor) {
 			return
 		}
 
-		const text = activeEditor.document.getText()
-		const unchecked = []
+		const doc = activeEditor.document
+		const text = doc.getText()
+		let match
+
 		const checked = []
 		const comment = []
-		const heading = []
+		const project = []
+		const area = []
+		const unchecked = []
+		// const heading = []
 
-		let match
 		while ((match = uncheckedRegex.exec(text))) {
+			
 			const startIndex = match.index
 			const endIndex = match.index + match[0].length
 
@@ -91,40 +112,41 @@ function activate(context) {
 			const endPos = activeEditor.document.positionAt(endIndex);
 			const range = new vscode.Range(startPos, endPos);
 
-			const args = { startIndex, endIndex }
-			const commandUri = vscode.Uri.parse(
-				`command:extension.check?${encodeURIComponent(JSON.stringify(args))}`
-			);
-			const link = new vscode.MarkdownString(`[✔](${commandUri})`);
-			link.isTrusted = true;
+			// const args = { startIndex, endIndex }
+			// const commandUri = vscode.Uri.parse(
+			// 	`command:extension.check?${encodeURIComponent(JSON.stringify(args))}`
+			// );
+			// const link = new vscode.MarkdownString(`[✔](${commandUri})`);
+			// link.isTrusted = true;
+
+			
 
 			const decoration = {
 				range: range,
-				hoverMessage: link
+				// hoverMessage: link
 			};
 			unchecked.push(decoration);
 		}
 
-		while ((match = checkedRegex.exec(text))) {
-			const startIndex = match.index
-			const endIndex = match.index + match[0].length
+		const getIndentCountOnLine = (lineNumber) => {
+			const line = doc.lineAt(lineNumber)
+			const indentCount = line.firstNonWhitespaceCharacterIndex
+			return indentCount
+		}
 
-			const startPos = activeEditor.document.positionAt(startIndex);
-			const endPos = activeEditor.document.positionAt(endIndex);
-			const range = new vscode.Range(startPos, endPos);
+		while ((match = checkedBoxRegex.exec(text))) {
+			const firstLine = doc.positionAt(match.index).line
 
-			const args = { startIndex, endIndex }
-			const commandUri = vscode.Uri.parse(
-				`command:extension.uncheck?${encodeURIComponent(JSON.stringify(args))}`
-			);
-			const link = new vscode.MarkdownString(`[Undo](${commandUri})`);
-			link.isTrusted = true;
+			const firstLineIndentCount = getIndentCountOnLine(firstLine)
+			let currentLine = firstLine
+			while (getIndentCountOnLine(currentLine + 1) > firstLineIndentCount) {
+				currentLine += 1
+			}
 
-			const decoration = {
-				range: range,
-				hoverMessage: link
-			};
-			checked.push(decoration);
+			const startPos = doc.positionAt(match.index)
+			const endPos = doc.lineAt(currentLine).range.end
+
+			checked.push({ range: new vscode.Range(startPos, endPos) });
 		}
 
 		while ((match = commentRegex.exec(text))) {
@@ -141,8 +163,8 @@ function activate(context) {
 			comment.push(decoration);
 		}
 
-		while ((match = headingRegex.exec(text))) {
-			const startIndex = match.index
+		while ((match = projectRegex.exec(text))) {
+			const startIndex = match.index + 1
 			const endIndex = match.index + match[0].length
 
 			const startPos = activeEditor.document.positionAt(startIndex);
@@ -152,13 +174,46 @@ function activate(context) {
 			const decoration = {
 				range: range
 			};
-			heading.push(decoration);
+			project.push(decoration);
 		}
 
-		activeEditor.setDecorations(uncheckedDecorationType, unchecked);
+		while ((match = areaRegex.exec(text))) {
+			const startIndex = match.index + 1
+			const endIndex = match.index + match[0].length
+
+			const startPos = activeEditor.document.positionAt(startIndex);
+			const endPos = activeEditor.document.positionAt(endIndex);
+			const range = new vscode.Range(startPos, endPos);
+
+			const isRootIndent = getIndentCountOnLine(startPos.line) === 0
+			if (isRootIndent) {
+				const decoration = {
+					range: range
+				};
+				area.push(decoration);
+			}
+		}
+
+		// while ((match = headingRegex.exec(text))) {
+		// 	const startIndex = match.index
+		// 	const endIndex = match.index + match[0].length
+
+		// 	const startPos = activeEditor.document.positionAt(startIndex);
+		// 	const endPos = activeEditor.document.positionAt(endIndex);
+		// 	const range = new vscode.Range(startPos, endPos);
+
+		// 	const decoration = {
+		// 		range: range
+		// 	};
+		// 	heading.push(decoration);
+		// }
+
 		activeEditor.setDecorations(checkedDecorationType, checked);
 		activeEditor.setDecorations(commentDecorationType, comment);
-		activeEditor.setDecorations(headingDecorationType, heading);
+		activeEditor.setDecorations(projectDecorationType, project);
+		activeEditor.setDecorations(areaDecorationType, area);
+		activeEditor.setDecorations(uncheckedDecorationType, unchecked);
+		// activeEditor.setDecorations(headingDecorationType, heading);
 	}
 
 	function triggerUpdateDecorations(throttle = false) {
