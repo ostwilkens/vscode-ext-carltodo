@@ -1,14 +1,14 @@
 const vscode = require('vscode');
 
 function deactivate(context) {
-	console.log("deactivate")
+	// console.log("deactivate")
 }
 
 function activate(context) {
-	console.log("activate")
+	// console.log("activate")
 
 	const disposable1 = vscode.commands.registerCommand('extension.check', function ({startIndex, endIndex}) {
-		console.log("check", startIndex, endIndex)
+		// console.log("check", startIndex, endIndex)
 		const editor = vscode.window.activeTextEditor
 
 		if (editor) {
@@ -18,7 +18,8 @@ function activate(context) {
 				const range = new vscode.Range(startPos, endPos);
 				
 				const text = editor.document.getText(range)
-				const newText = text.replace("[ ]", "[x]").replace("[]", "[x]")
+				const charIndex = text.indexOf("-")
+				const newText = text.substring(0, charIndex) + "x" + text.substring(charIndex + 1)
 
 				editBuilder.replace(range, newText)
 			})
@@ -56,15 +57,22 @@ function activate(context) {
 	const projectDecorationType = vscode.window.createTextEditorDecorationType({
 		// color: "#89C",
 		// fontStyle: "italic",
-		fontWeight: "bold"
+		fontWeight: "bold",
+		// backgroundColor: "red"
 	});
 	const areaDecorationType = vscode.window.createTextEditorDecorationType({
 		color: "#AAA",
 		fontStyle: "italic",
+		// backgroundColor: "red"
 		// fontWeight: "100"
 	});
 	const uncheckedDecorationType = vscode.window.createTextEditorDecorationType({
 		color: "#ABD"
+		// color: "#89C",
+	});
+	const areaWithoutEmojiDecorationType = vscode.window.createTextEditorDecorationType({
+		// color: "#ABD"
+		// backgroundColor: 'red'
 		// color: "#89C",
 	});
 	// const headingDecorationType = vscode.window.createTextEditorDecorationType({
@@ -75,17 +83,23 @@ function activate(context) {
 
 	let activeEditor = vscode.window.activeTextEditor;
 
-	const checkedBoxRegex = /\[x\]/g;
+	const uncheckedRegex =  /^[\t ]*?-.*$/gm;
+	const checkedBoxRegex = /^[\t ]*?\x.*$/gm;
 	const commentRegex = /\#.*?$/gm;
 	// const projectRegex = /[\>] .*:?$/gm;
-	const projectRegex = /.*:$/gm;
+	// const projectRegex = /.*:$/gm;
+	// const projectRegex = /^- .*$/gm;
+	const projectRegex = /^[^\s].*$/gm;
 	// const projectRegex = /[^>]*:$/gm;
 	// const projectRegex = /.*:?$/gm;
 	const areaRegex = /[A-Za-z0-9 \._]*\>/gm;
-	const uncheckedRegex = /\[ ?\].*$/gm;
+	// const uncheckedRegex = /\[ ?\].*$/gm;
 	// const uncheckedRegex = /\[ ?\]/gm;
 	// const checkedRegex = /\[x\]/gm;
 	// const headingRegex = /^[^\[\n]*:$/gm;
+	// const emojiRegex = /^[^\s].*$/gm;
+	const emojiRegex = /\p{Emoji_Presentation} .*>/ug
+	const areaWithoutEmojiRegex = /- [A-Za-z0-9 \._]* .*>/ugm
 
 	function updateDecorations() {
 		if (!activeEditor) {
@@ -101,6 +115,7 @@ function activate(context) {
 		const project = []
 		const area = []
 		const unchecked = []
+		const areaWithoutEmoji = []
 		// const heading = []
 
 		while ((match = uncheckedRegex.exec(text))) {
@@ -112,18 +127,18 @@ function activate(context) {
 			const endPos = activeEditor.document.positionAt(endIndex);
 			const range = new vscode.Range(startPos, endPos);
 
-			// const args = { startIndex, endIndex }
-			// const commandUri = vscode.Uri.parse(
-			// 	`command:extension.check?${encodeURIComponent(JSON.stringify(args))}`
-			// );
-			// const link = new vscode.MarkdownString(`[✔](${commandUri})`);
-			// link.isTrusted = true;
+			const args = { startIndex, endIndex }
+			const commandUri = vscode.Uri.parse(
+				`command:extension.check?${encodeURIComponent(JSON.stringify(args))}`
+			);
+			const link = new vscode.MarkdownString(`[✔](${commandUri})`);
+			link.isTrusted = true;
 
 			
 
 			const decoration = {
 				range: range,
-				// hoverMessage: link
+				hoverMessage: link
 			};
 			unchecked.push(decoration);
 		}
@@ -142,6 +157,8 @@ function activate(context) {
 			while (getIndentCountOnLine(currentLine + 1) > firstLineIndentCount) {
 				currentLine += 1
 			}
+
+			// console.log(firstLine, currentLine)
 
 			const startPos = doc.positionAt(match.index)
 			const endPos = doc.lineAt(currentLine).range.end
@@ -164,8 +181,12 @@ function activate(context) {
 		}
 
 		while ((match = projectRegex.exec(text))) {
-			const startIndex = match.index + 1
+			let startIndex = match.index
 			const endIndex = match.index + match[0].length
+
+			// if (match[0][0] === " ") {
+			// 	startIndex += 1
+			// }
 
 			const startPos = activeEditor.document.positionAt(startIndex);
 			const endPos = activeEditor.document.positionAt(endIndex);
@@ -178,8 +199,12 @@ function activate(context) {
 		}
 
 		while ((match = areaRegex.exec(text))) {
-			const startIndex = match.index + 1
+			let startIndex = match.index
 			const endIndex = match.index + match[0].length
+
+			if (match[0][0] === " ") {
+				startIndex += 1
+			}
 
 			const startPos = activeEditor.document.positionAt(startIndex);
 			const endPos = activeEditor.document.positionAt(endIndex);
@@ -193,6 +218,47 @@ function activate(context) {
 				area.push(decoration);
 			}
 		}
+
+		const areaEmojis = {}
+
+		while ((match = emojiRegex.exec(text))) {
+			// extract area emoji
+			const value = match[0]
+			const spaceIndex = value.indexOf(" ")
+			const emojiValue = value.slice(0, spaceIndex)
+			const areaName = value.slice(spaceIndex, value.length - 1).trim()
+			areaEmojis[areaName.toLowerCase()] = emojiValue
+		}
+		// console.log(areaEmojis)
+
+		while ((match = areaWithoutEmojiRegex.exec(text))) {
+			const startIndex = match.index
+			const endIndex = match.index + match[0].length
+
+			// extract area name
+			const value = match[0]
+			const areaName = value.slice(2, value.length - 1).trim()
+			let emoji = areaEmojis[areaName.toLowerCase()]
+			if (!emoji) {
+				emoji = "﹖"
+			}
+
+			const startPos = activeEditor.document.positionAt(startIndex + 2);
+			const endPos = activeEditor.document.positionAt(endIndex);
+			const range = new vscode.Range(startPos, endPos);
+
+			const decoration = {
+				range: range,
+				renderOptions: {
+					before: {
+						contentText: emoji + " "
+					}
+				}
+			};
+			areaWithoutEmoji.push(decoration);
+		}
+
+
 
 		// while ((match = headingRegex.exec(text))) {
 		// 	const startIndex = match.index
@@ -213,6 +279,7 @@ function activate(context) {
 		activeEditor.setDecorations(projectDecorationType, project);
 		activeEditor.setDecorations(areaDecorationType, area);
 		activeEditor.setDecorations(uncheckedDecorationType, unchecked);
+		activeEditor.setDecorations(areaWithoutEmojiDecorationType, areaWithoutEmoji);
 		// activeEditor.setDecorations(headingDecorationType, heading);
 	}
 
