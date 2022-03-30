@@ -92,7 +92,8 @@ function activate(context) {
 	const projectRegex = /^[^\s].*$/gm;
 	// const projectRegex = /[^>]*:$/gm;
 	// const projectRegex = /.*:?$/gm;
-	const areaRegex = /[A-Za-z0-9 \._]*\>/gm;
+	// const areaRegex = /[A-Za-z0-9 \._]*\>/gm;
+	const areaRegex = /[A-Za-z0-9åäöÅÄÖ \._]*\>/gm;
 	// const uncheckedRegex = /\[ ?\].*$/gm;
 	// const uncheckedRegex = /\[ ?\]/gm;
 	// const checkedRegex = /\[x\]/gm;
@@ -229,7 +230,7 @@ function activate(context) {
 			const areaName = value.slice(spaceIndex, value.length - 1).trim()
 			areaEmojis[areaName.toLowerCase()] = emojiValue
 		}
-		// console.log(areaEmojis)
+		console.log(areaEmojis)
 
 		while ((match = areaWithoutEmojiRegex.exec(text))) {
 			const startIndex = match.index
