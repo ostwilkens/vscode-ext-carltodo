@@ -100,7 +100,7 @@ function activate(context) {
 	// const headingRegex = /^[^\[\n]*:$/gm;
 	// const emojiRegex = /^[^\s].*$/gm;
 	const emojiRegex = /\p{Emoji_Presentation} .*>/ug
-	const areaWithoutEmojiRegex = /[-x] [A-Za-z0-9 \._]* .*>/ugm
+	const areaWithoutEmojiRegex = /[-x] [A-Za-z0-9åäöÅÄÖ \._]* .*>/ugm
 
 	function updateDecorations() {
 		if (!activeEditor) {
